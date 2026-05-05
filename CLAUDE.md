@@ -55,11 +55,11 @@ If a change needs a new message type, define it in shared first.
 
 Source at `packages/shared/src/`. No build step — exports raw `.ts`.
 
-| File            | Contains                                                                     |
-| --------------- | ---------------------------------------------------------------------------- |
-| `constants.ts`  | CHUNK\_SIZE, buffer watermarks, room config, retry config                    |
-| `types.ts`      | SignalMessage, FileMeta, DataChannelMessage, TransferItem, WorkerInbound/Outbound |
-| `protocol.ts`   | `encodeChunk` / `decodeChunk` (Uint32BE header + ArrayBuffer payload)        |
+| File           | Contains                                                                          |
+| -------------- | --------------------------------------------------------------------------------- |
+| `constants.ts` | CHUNK_SIZE, buffer watermarks, room config, retry config                          |
+| `types.ts`     | SignalMessage, FileMeta, DataChannelMessage, TransferItem, WorkerInbound/Outbound |
+| `protocol.ts`  | `encodeChunk` / `decodeChunk` (Uint32BE header + ArrayBuffer payload)             |
 
 Key constants:
 
@@ -94,6 +94,8 @@ Deploy: Fly.io (`fly.toml` in `apps/server/`)
 ## @repo/web
 
 Source at `apps/web/`. Next.js App Router. `app/` directory at root (no `src/` wrapper).
+
+> Full architecture plan, implementation order, and verification checklist: **[PLANNING.md](./PLANNING.md)**
 
 ### Planned structure (not yet built)
 
@@ -137,8 +139,8 @@ Buffer flow control:
 
 ```typescript
 while (dc.bufferedAmount > BUFFER_HIGH_WATERMARK)
-  await waitEvent(dc, 'bufferedamountlow')
-dc.send(chunk)
+  await waitEvent(dc, "bufferedamountlow");
+dc.send(chunk);
 ```
 
 ICE restart: `pc.onconnectionstatechange` → `'failed'` → `pc.restartIce()` → max `ICE_RESTART_MAX` times.
@@ -163,12 +165,12 @@ Web Worker: `config.output.workerChunkLoading = 'import-scripts'` in webpack con
 
 ## Retry Strategy (4 Layers)
 
-| Layer | Where                                      | Mechanism                                               |
-| ----- | ------------------------------------------ | ------------------------------------------------------- |
-| 1     | `lib/signaling-client.ts`                  | WS exponential backoff, auto-rejoin room on reconnect   |
-| 2     | `workers/transfer-engine.worker.ts`        | `pc.restartIce()` on connection `'failed'` (max 3)      |
-| 3     | `workers/transfer-engine.worker.ts`        | ACK-based chunk resume from `lastAckedChunk + 1`        |
-| 4     | `apps/server/src/index.ts`                 | Express error handler, WS upgrade only on `/signal`     |
+| Layer | Where                               | Mechanism                                             |
+| ----- | ----------------------------------- | ----------------------------------------------------- |
+| 1     | `lib/signaling-client.ts`           | WS exponential backoff, auto-rejoin room on reconnect |
+| 2     | `workers/transfer-engine.worker.ts` | `pc.restartIce()` on connection `'failed'` (max 3)    |
+| 3     | `workers/transfer-engine.worker.ts` | ACK-based chunk resume from `lastAckedChunk + 1`      |
+| 4     | `apps/server/src/index.ts`          | Express error handler, WS upgrade only on `/signal`   |
 
 ---
 
@@ -246,9 +248,9 @@ Cross-network testing requires TURN config in `.env.local`.
 
 ## Deployment
 
-| Service          | What                  | How                                           |
-| ---------------- | --------------------- | --------------------------------------------- |
-| Cloudflare Pages | `apps/web` static export | `pnpm build`, deploy `apps/web/out/`       |
-| Fly.io           | `apps/server`         | `fly deploy` from `apps/server/`              |
+| Service          | What                     | How                                  |
+| ---------------- | ------------------------ | ------------------------------------ |
+| Cloudflare Pages | `apps/web` static export | `pnpm build`, deploy `apps/web/out/` |
+| Fly.io           | `apps/server`            | `fly deploy` from `apps/server/`     |
 
 Server health check: `GET /health` → `{ status: 'ok', rooms: N }`

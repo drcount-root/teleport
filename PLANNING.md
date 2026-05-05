@@ -8,21 +8,21 @@ Zero-auth, zero-database real-time P2P file transfer app. File bytes go peer-to-
 
 ## Architecture Decisions
 
-| Concern | Choice | Reason |
-|---------|--------|--------|
-| Transfer | WebRTC DataChannel | Direct P2P, server never sees file bytes, wire-speed on LAN |
-| Chunk size | 256 KB | Optimal JS overhead vs. progress granularity |
-| Signaling | Node.js + Express + `ws` | Express for HTTP routes (health, future endpoints), ws for WebSocket upgrade |
-| Frontend | Next.js 16 (App Router) + TypeScript | Static export for PWA deployment, React 19 |
-| State | Zustand | 1 KB, no boilerplate, perfect for async transfer state machines |
-| Styling | Tailwind CSS + Radix UI | No runtime CSS, accessible primitives |
-| Monorepo | pnpm workspaces + Turborepo | Task orchestration, build caching, parallel dev |
-| STUN | Google public servers | Free, reliable, zero ops |
-| TURN (MVP) | metered.ca free tier | 500 GB/month free, swap to Coturn later |
-| PWA | `@ducanh2912/next-pwa` (Workbox) | Best PWA support for Next.js |
-| Worker | RTCPeerConnection in Web Worker | Main thread never blocks during transfer |
-| Deployment | Fly.io (signaling), Cloudflare Pages (client) | Free tier, global edge, WebSocket support |
-| Retry | Multi-layer retry strategy | See Retry Mechanisms section |
+| Concern    | Choice                                        | Reason                                                                       |
+| ---------- | --------------------------------------------- | ---------------------------------------------------------------------------- |
+| Transfer   | WebRTC DataChannel                            | Direct P2P, server never sees file bytes, wire-speed on LAN                  |
+| Chunk size | 256 KB                                        | Optimal JS overhead vs. progress granularity                                 |
+| Signaling  | Node.js + Express + `ws`                      | Express for HTTP routes (health, future endpoints), ws for WebSocket upgrade |
+| Frontend   | Next.js 16 (App Router) + TypeScript          | Static export for PWA deployment, React 19                                   |
+| State      | Zustand                                       | 1 KB, no boilerplate, perfect for async transfer state machines              |
+| Styling    | Tailwind CSS + Radix UI                       | No runtime CSS, accessible primitives                                        |
+| Monorepo   | pnpm workspaces + Turborepo                   | Task orchestration, build caching, parallel dev                              |
+| STUN       | Google public servers                         | Free, reliable, zero ops                                                     |
+| TURN (MVP) | metered.ca free tier                          | 500 GB/month free, swap to Coturn later                                      |
+| PWA        | `@ducanh2912/next-pwa` (Workbox)              | Best PWA support for Next.js                                                 |
+| Worker     | RTCPeerConnection in Web Worker               | Main thread never blocks during transfer                                     |
+| Deployment | Fly.io (signaling), Cloudflare Pages (client) | Free tier, global edge, WebSocket support                                    |
+| Retry      | Multi-layer retry strategy                    | See Retry Mechanisms section                                                 |
 
 ---
 
@@ -141,30 +141,30 @@ Note: task is `check-types` not `typecheck`. Add `dist/**` to `outputs` when `@r
 
 ```yaml
 packages:
-  - 'apps/*'
-  - 'packages/*'
+  - "apps/*"
+  - "packages/*"
 ```
 
 ### `apps/web/next.config.ts`
 
 ```typescript
-import withPWA from '@ducanh2912/next-pwa'
+import withPWA from "@ducanh2912/next-pwa";
 
 const nextConfig = withPWA({
-  dest: 'public',
+  dest: "public",
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
 })({
-  output: 'export',
+  output: "export",
   webpack(config) {
-    config.output.workerChunkLoading = 'import-scripts'
-    return config
+    config.output.workerChunkLoading = "import-scripts";
+    return config;
   },
   // No rewrites — static export doesn't support them at build time.
   // WS URL is configured via NEXT_PUBLIC_SIGNALING_URL env var in all envs.
-})
+});
 
-export default nextConfig
+export default nextConfig;
 ```
 
 ---
@@ -172,19 +172,19 @@ export default nextConfig
 ## Shared Constants (`packages/shared/src/constants.ts`)
 
 ```typescript
-export const CHUNK_SIZE = 262_144               // 256 KB per chunk
-export const BUFFER_HIGH_WATERMARK = 4_000_000  // pause sending above this
-export const BUFFER_LOW_WATERMARK  = 2_000_000  // resume sending below this
-export const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-export const ROOM_CODE_LENGTH = 6
-export const ROOM_TTL_MS = 300_000              // 5 min safety sweep
+export const CHUNK_SIZE = 262_144; // 256 KB per chunk
+export const BUFFER_HIGH_WATERMARK = 4_000_000; // pause sending above this
+export const BUFFER_LOW_WATERMARK = 2_000_000; // resume sending below this
+export const ROOM_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+export const ROOM_CODE_LENGTH = 6;
+export const ROOM_TTL_MS = 300_000; // 5 min safety sweep
 
 // Retry
-export const WS_RETRY_BASE_MS = 100
-export const WS_RETRY_MAX_ATTEMPTS = 5
-export const WS_RETRY_MULTIPLIER = 2
-export const ICE_RESTART_MAX = 3
-export const ACK_INTERVAL_CHUNKS = 64           // ACK every 64 chunks = every 16 MB
+export const WS_RETRY_BASE_MS = 100;
+export const WS_RETRY_MAX_ATTEMPTS = 5;
+export const WS_RETRY_MULTIPLIER = 2;
+export const ICE_RESTART_MAX = 3;
+export const ACK_INTERVAL_CHUNKS = 64; // ACK every 64 chunks = every 16 MB
 ```
 
 ---
@@ -237,22 +237,24 @@ Data frame (ArrayBuffer):
 ## Signaling Server (`apps/server/src/index.ts`)
 
 ```typescript
-import express from 'express'
-import { createServer } from 'http'
-import { WebSocketServer } from 'ws'
-import { roomManager } from './room-manager'
-import { signalHandler } from './signal-handler'
+import express from "express";
+import { createServer } from "http";
+import { WebSocketServer } from "ws";
+import { roomManager } from "./room-manager";
+import { signalHandler } from "./signal-handler";
 
-const app = express()
-app.get('/health', (_, res) => res.json({ status: 'ok', rooms: roomManager.count() }))
+const app = express();
+app.get("/health", (_, res) =>
+  res.json({ status: "ok", rooms: roomManager.count() }),
+);
 app.use((err: Error, _req: any, res: any, _next: any) =>
-  res.status(500).json({ error: err.message })
-)
+  res.status(500).json({ error: err.message }),
+);
 
-const server = createServer(app)
-const wss = new WebSocketServer({ server, path: '/signal' })
-wss.on('connection', (ws) => signalHandler(ws, roomManager))
-server.listen(process.env.PORT ?? 3001)
+const server = createServer(app);
+const wss = new WebSocketServer({ server, path: "/signal" });
+wss.on("connection", (ws) => signalHandler(ws, roomManager));
+server.listen(process.env.PORT ?? 3001);
 ```
 
 Room lifecycle:
@@ -275,15 +277,15 @@ Owns `RTCPeerConnection`. Main thread never touches WebRTC — only postMessages
 
 ```typescript
 for (const file of queue) {
-  dc.send(JSON.stringify(fileMeta))
-  const buf = await file.arrayBuffer()
+  dc.send(JSON.stringify(fileMeta));
+  const buf = await file.arrayBuffer();
   for (let i = resumeFrom; i < totalChunks; i++) {
     while (dc.bufferedAmount > BUFFER_HIGH_WATERMARK)
-      await waitEvent(dc, 'bufferedamountlow')
-    dc.send(encodeChunk(i, buf.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE)))
-    if (i % ACK_INTERVAL_CHUNKS === 0) postProgress(fileId, i)
+      await waitEvent(dc, "bufferedamountlow");
+    dc.send(encodeChunk(i, buf.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE)));
+    if (i % ACK_INTERVAL_CHUNKS === 0) postProgress(fileId, i);
   }
-  dc.send(JSON.stringify({ type: 'file-complete', fileId }))
+  dc.send(JSON.stringify({ type: "file-complete", fileId }));
 }
 ```
 
@@ -292,16 +294,16 @@ for (const file of queue) {
 ```typescript
 dc.onmessage = ({ data }) => {
   if (data instanceof ArrayBuffer) {
-    const idx = decodeChunkHeader(data)
-    chunks.set(idx, data)
-    receivedCount++
+    const idx = decodeChunkHeader(data);
+    chunks.set(idx, data);
+    receivedCount++;
     if (receivedCount % ACK_INTERVAL_CHUNKS === 0)
-      dc.send(JSON.stringify({ type: 'ack', fileId, upToChunk: idx }))
-    if (receivedCount === totalChunks) reassembleAndPost()
+      dc.send(JSON.stringify({ type: "ack", fileId, upToChunk: idx }));
+    if (receivedCount === totalChunks) reassembleAndPost();
   } else {
-    handleControl(JSON.parse(data as string))
+    handleControl(JSON.parse(data as string));
   }
-}
+};
 ```
 
 ---
@@ -310,20 +312,27 @@ dc.onmessage = ({ data }) => {
 
 ```typescript
 // connection.store.ts
-type Phase = 'idle' | 'creating' | 'joining' | 'signaling' | 'connected' | 'reconnecting' | 'error'
+type Phase =
+  | "idle"
+  | "creating"
+  | "joining"
+  | "signaling"
+  | "connected"
+  | "reconnecting"
+  | "error";
 interface ConnectionStore {
-  phase: Phase
-  roomCode: string | null
-  wsRetryCount: number
-  iceRestartCount: number
-  error: string | null
+  phase: Phase;
+  roomCode: string | null;
+  wsRetryCount: number;
+  iceRestartCount: number;
+  error: string | null;
 }
 
 // transfer.store.ts
 interface TransferStore {
-  queue: TransferItem[]
-  direction: 'send' | 'receive' | null
-  isPaused: boolean
+  queue: TransferItem[];
+  direction: "send" | "receive" | null;
+  isPaused: boolean;
 }
 // TransferItem.lastAckedChunk enables resume after reconnect
 ```
