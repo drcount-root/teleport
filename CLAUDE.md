@@ -6,14 +6,14 @@ P2P file transfer PWA. No auth, no database, no file bytes on server. WebRTC Dat
 
 ## Monorepo Layout
 
-```
+```text
 apps/web/        @repo/web     Next.js 16 App Router — browser client + PWA
 apps/server/     @repo/server  Express + ws — signaling only (no file data)
 apps/docs/       unused scaffold — ignore
 
-packages/shared/      @repo/shared       types, constants, binary protocol
-packages/ui/          @repo/ui           shared React components
-packages/eslint-config/  @repo/eslint-config
+packages/shared/          @repo/shared          types, constants, binary protocol
+packages/ui/              @repo/ui               shared React components
+packages/eslint-config/   @repo/eslint-config
 packages/typescript-config/  @repo/typescript-config
 ```
 
@@ -39,7 +39,7 @@ Turbo task is `check-types` — NOT `typecheck`.
 
 ## Package Dependency Rules
 
-```
+```text
 @repo/web    → @repo/shared, @repo/ui
 @repo/server → @repo/shared
 @repo/shared → (no workspace deps)
@@ -55,13 +55,14 @@ If a change needs a new message type, define it in shared first.
 
 Source at `packages/shared/src/`. No build step — exports raw `.ts`.
 
-| File | Contains |
-|------|----------|
-| `constants.ts` | CHUNK_SIZE, buffer watermarks, room config, retry config |
-| `types.ts` | SignalMessage, FileMeta, DataChannelMessage, TransferItem, WorkerInbound/Outbound |
-| `protocol.ts` | `encodeChunk` / `decodeChunk` (Uint32BE header + ArrayBuffer payload) |
+| File            | Contains                                                                     |
+| --------------- | ---------------------------------------------------------------------------- |
+| `constants.ts`  | CHUNK\_SIZE, buffer watermarks, room config, retry config                    |
+| `types.ts`      | SignalMessage, FileMeta, DataChannelMessage, TransferItem, WorkerInbound/Outbound |
+| `protocol.ts`   | `encodeChunk` / `decodeChunk` (Uint32BE header + ArrayBuffer payload)        |
 
 Key constants:
+
 - `CHUNK_SIZE = 262_144` (256 KB)
 - `BUFFER_HIGH_WATERMARK = 4_000_000` — pause DataChannel send above this
 - `BUFFER_LOW_WATERMARK = 2_000_000` — resume below this
@@ -75,7 +76,7 @@ Key constants:
 
 Source at `apps/server/src/`. Express + `ws` library. **Never handles file bytes.**
 
-```
+```text
 index.ts          Express app, WebSocketServer on path /signal, /health, /metrics
 room-manager.ts   In-memory Map<code, Room>. create/join/rejoin/getPeer/getCode/sweep
 signal-handler.ts Routes WS messages: create→joined, join, rejoin, signal relay, ready, peer-left
@@ -96,7 +97,7 @@ Source at `apps/web/`. Next.js App Router. `app/` directory at root (no `src/` w
 
 ### Planned structure (not yet built)
 
-```
+```text
 app/
   layout.tsx
   page.tsx              main UI — single page, no routing needed
@@ -133,6 +134,7 @@ Send flow: FileMeta JSON → ArrayBuffer chunks with 4-byte header → file-comp
 Receive flow: parse header → accumulate in Map → ACK every 64 chunks → reassemble → post Blob
 
 Buffer flow control:
+
 ```typescript
 while (dc.bufferedAmount > BUFFER_HIGH_WATERMARK)
   await waitEvent(dc, 'bufferedamountlow')
@@ -161,18 +163,18 @@ Web Worker: `config.output.workerChunkLoading = 'import-scripts'` in webpack con
 
 ## Retry Strategy (4 Layers)
 
-| Layer | Where | Mechanism |
-|-------|-------|-----------|
-| 1 | `lib/signaling-client.ts` | WS exponential backoff, auto-rejoin room on reconnect |
-| 2 | `workers/transfer-engine.worker.ts` | `pc.restartIce()` on connection `'failed'` (max 3) |
-| 3 | `workers/transfer-engine.worker.ts` | ACK-based chunk resume from `lastAckedChunk + 1` |
-| 4 | `apps/server/src/index.ts` | Express error handler, WS upgrade only on `/signal` |
+| Layer | Where                                      | Mechanism                                               |
+| ----- | ------------------------------------------ | ------------------------------------------------------- |
+| 1     | `lib/signaling-client.ts`                  | WS exponential backoff, auto-rejoin room on reconnect   |
+| 2     | `workers/transfer-engine.worker.ts`        | `pc.restartIce()` on connection `'failed'` (max 3)      |
+| 3     | `workers/transfer-engine.worker.ts`        | ACK-based chunk resume from `lastAckedChunk + 1`        |
+| 4     | `apps/server/src/index.ts`                 | Express error handler, WS upgrade only on `/signal`     |
 
 ---
 
 ## Wire Protocol
 
-```
+```text
 DataChannel control (JSON string):
   → file-meta:     { type, fileId, name, size, mimeType, totalChunks, chunkSize }
   ← ack:           { type: 'ack', fileId, upToChunk: N }   every 64 chunks
@@ -191,7 +193,8 @@ DataChannel data (ArrayBuffer):
 - `bundler` moduleResolution in shared + server (not NodeNext — avoids extension requirement)
 - `nextjs.json` tsconfig for web (Next.js plugin + Bundler resolution)
 - No `.js` extension in imports within `apps/web` (Next.js handles it)
-- `.js` extension required in `apps/server` imports (tsx/tsup handles actual resolution)
+- No `.js` extension in `packages/shared` imports (bundler resolution handles it)
+- `.js` extension in `apps/server` imports (tsx/tsup handles actual resolution at runtime)
 
 ---
 
@@ -200,7 +203,7 @@ DataChannel data (ArrayBuffer):
 - No comments unless WHY is non-obvious. No JSDoc. No multi-line comment blocks.
 - No `console.log` in client code. `console.error` only for caught errors.
 - `console.log` in server is fine for startup messages.
-- React components: named exports, not default exports (except page.tsx — Next.js requires default).
+- React components: named exports, not default exports (except `page.tsx` — Next.js requires default).
 - Zustand stores: define interface, then `create<StoreType>()((set, get) => ...)`.
 - No `useEffect` for derived state — compute inline or use Zustand selectors.
 - `'use client'` directive required on any component using hooks, stores, or browser APIs.
@@ -209,7 +212,7 @@ DataChannel data (ArrayBuffer):
 
 ## ESLint
 
-`@repo/eslint-config/next.js` for web, `@repo/eslint-config/base.js` for server/shared.
+`@repo/eslint-config/next-js` for web, `@repo/eslint-config/base` for server/shared.
 All warnings treated as errors (`--max-warnings 0`).
 `turbo/no-undeclared-env-vars` — declare all `NEXT_PUBLIC_*` vars in turbo.json `env` field if needed.
 
@@ -243,9 +246,9 @@ Cross-network testing requires TURN config in `.env.local`.
 
 ## Deployment
 
-| Service | What | How |
-|---------|------|-----|
-| Cloudflare Pages | `apps/web` static export | `pnpm build`, deploy `apps/web/out/` |
-| Fly.io | `apps/server` | `fly deploy` from `apps/server/` |
+| Service          | What                  | How                                           |
+| ---------------- | --------------------- | --------------------------------------------- |
+| Cloudflare Pages | `apps/web` static export | `pnpm build`, deploy `apps/web/out/`       |
+| Fly.io           | `apps/server`         | `fly deploy` from `apps/server/`              |
 
 Server health check: `GET /health` → `{ status: 'ok', rooms: N }`

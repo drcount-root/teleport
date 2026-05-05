@@ -1,3 +1,3 @@
-export * from './constants.js'
-export * from './types.js'
-export * from './protocol.js'
+export * from './constants'
+export * from './types'
+export * from './protocol'
