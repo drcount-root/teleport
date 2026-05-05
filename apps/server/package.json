@@ -1,0 +1,27 @@
+{
+  "name": "@repo/server",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup src/index.ts --format cjs --out-dir dist --no-splitting",
+    "start": "node dist/index.cjs",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "dependencies": {
+    "@repo/shared": "workspace:*",
+    "express": "^4.21.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.15.3",
+    "@types/ws": "^8.5.14",
+    "tsup": "^8.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "5.9.2"
+  }
+}
