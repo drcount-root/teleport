@@ -360,8 +360,8 @@ NEXT_PUBLIC_TURN_CRED=<metered.ca credential>
 ## Implementation Order
 
 1. **Phase 0** — CLAUDE.md + `.claude/commands/` ✅
-2. **Phase 1** — `packages/shared` (`@repo/shared`): constants → types → protocol
-3. **Phase 2** — `apps/server` (`@repo/server`): code-generator → room-manager → signal-handler → index → Dockerfile + fly.toml
+2. **Phase 1** — `packages/shared` (`@repo/shared`): constants → types → protocol ✅
+3. **Phase 2** — `apps/server` (`@repo/server`): code-generator → room-manager → signal-handler → index → Dockerfile + fly.toml ✅
 4. **Phase 3** — Transfer engine Web Worker in `apps/web/workers/`
 5. **Phase 4** — Signaling client + WS retry + hooks in `apps/web/`
 6. **Phase 5** — Zustand stores in `apps/web/stores/`
