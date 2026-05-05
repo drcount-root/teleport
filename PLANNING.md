@@ -95,7 +95,6 @@ teleport/
 │   │       ├── signal-handler.ts     # routes all WS messages
 │   │       └── code-generator.ts     # 6-char room codes
 │   │
-│   └── docs/                         # unused scaffold — can be deleted
 │
 └── packages/
     ├── shared/                       # @repo/shared — types, constants, protocol

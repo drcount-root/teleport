@@ -9,7 +9,6 @@ P2P file transfer PWA. No auth, no database, no file bytes on server. WebRTC Dat
 ```text
 apps/web/        @repo/web     Next.js 16 App Router — browser client + PWA
 apps/server/     @repo/server  Express + ws — signaling only (no file data)
-apps/docs/       unused scaffold — ignore
 
 packages/shared/          @repo/shared          types, constants, binary protocol
 packages/ui/              @repo/ui               shared React components
