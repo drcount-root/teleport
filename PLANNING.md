@@ -26,19 +26,19 @@ Zero-auth, zero-database real-time P2P file transfer app. File bytes go peer-to-
 
 ---
 
-## Project Structure
+## Actual Monorepo Structure
+
+Turborepo default scaffold used — `apps/` for runnable apps, `packages/` for shared libs.
+Package name prefix: `@repo/*`. Next.js 16.2.0 + React 19.
 
 ```
 teleport/
 ├── PLANNING.md
-├── CLAUDE.md
-├── package.json                    # pnpm workspace root + turbo scripts
-├── pnpm-workspace.yaml
-├── turbo.json
-├── tsconfig.base.json
+├── CLAUDE.md                       # to be created
+├── package.json                    # workspace root (turbo, prettier, typescript)
+├── pnpm-workspace.yaml             # apps/* + packages/*
+├── turbo.json                      # build/dev/lint/check-types pipeline
 ├── .gitignore
-├── .prettierrc
-├── .eslintrc.json
 │
 ├── .claude/
 │   └── commands/
@@ -48,8 +48,56 @@ teleport/
 │       ├── build-prod.md
 │       └── deploy.md
 │
+├── apps/
+│   ├── web/                        # @repo/web — Next.js 16 App Router PWA (client)
+│   │   ├── package.json
+│   │   ├── next.config.ts
+│   │   ├── tsconfig.json
+│   │   ├── public/
+│   │   │   ├── manifest.json       # PWA manifest + share_target
+│   │   │   ├── icon-192.png
+│   │   │   └── icon-512.png
+│   │   └── app/
+│   │       ├── layout.tsx
+│   │       ├── page.tsx
+│   │       ├── globals.css
+│   │       └── share-target/
+│   │           └── page.tsx        # PWA share_target POST handler
+│   │   └── src/
+│   │       ├── components/
+│   │       │   ├── RoomCreator.tsx
+│   │       │   ├── RoomJoiner.tsx
+│   │       │   ├── DropZone.tsx
+│   │       │   ├── TransferQueue.tsx
+│   │       │   ├── ProgressBar.tsx
+│   │       │   ├── ConnectionStatus.tsx
+│   │       │   └── InstallPrompt.tsx
+│   │       ├── workers/
+│   │       │   └── transfer-engine.worker.ts   # owns RTCPeerConnection
+│   │       ├── stores/
+│   │       │   ├── connection.store.ts
+│   │       │   └── transfer.store.ts
+│   │       ├── hooks/
+│   │       │   ├── useSignaling.ts
+│   │       │   ├── useTransferEngine.ts
+│   │       │   └── useInstallPrompt.ts
+│   │       └── lib/
+│   │           ├── signaling-client.ts         # WS with exponential backoff
+│   │           └── ice-config.ts
+│   │
+│   └── server/                     # @repo/server — Express + ws signaling
+│       ├── package.json
+│       ├── tsconfig.json
+│       ├── Dockerfile
+│       ├── fly.toml
+│       └── src/
+│           ├── index.ts            # Express app + ws upgrade on /signal
+│           ├── room-manager.ts     # in-memory Map<code, Room>
+│           ├── signal-handler.ts   # routes all WS messages
+│           └── code-generator.ts   # 6-char room codes
+│
 └── packages/
-    ├── shared/                     # @teleport/shared
+    ├── shared/                     # @repo/shared — types, constants, protocol
     │   ├── package.json
     │   ├── tsconfig.json
     │   └── src/
@@ -58,51 +106,9 @@ teleport/
     │       ├── protocol.ts         # chunk header encode/decode (Uint32BE prefix)
     │       └── constants.ts        # all magic numbers + retry config
     │
-    ├── client/                     # @teleport/client — Next.js App Router PWA
-    │   ├── package.json
-    │   ├── next.config.ts
-    │   ├── tsconfig.json
-    │   ├── public/
-    │   │   ├── manifest.json       # PWA manifest + share_target
-    │   │   ├── icon-192.png
-    │   │   └── icon-512.png
-    │   └── src/
-    │       ├── app/
-    │       │   ├── layout.tsx
-    │       │   ├── page.tsx
-    │       │   └── share-target/
-    │       │       └── page.tsx    # handles PWA share_target POST
-    │       ├── components/
-    │       │   ├── RoomCreator.tsx
-    │       │   ├── RoomJoiner.tsx
-    │       │   ├── DropZone.tsx
-    │       │   ├── TransferQueue.tsx
-    │       │   ├── ProgressBar.tsx
-    │       │   ├── ConnectionStatus.tsx
-    │       │   └── InstallPrompt.tsx
-    │       ├── workers/
-    │       │   └── transfer-engine.worker.ts   # owns RTCPeerConnection
-    │       ├── stores/
-    │       │   ├── connection.store.ts
-    │       │   └── transfer.store.ts
-    │       ├── hooks/
-    │       │   ├── useSignaling.ts
-    │       │   ├── useTransferEngine.ts
-    │       │   └── useInstallPrompt.ts
-    │       └── lib/
-    │           ├── signaling-client.ts         # WS with exponential backoff
-    │           └── ice-config.ts
-    │
-    └── server/                     # @teleport/server — Express + ws signaling
-        ├── package.json
-        ├── tsconfig.json
-        ├── Dockerfile
-        ├── fly.toml
-        └── src/
-            ├── index.ts            # Express app + ws upgrade on /signal
-            ├── room-manager.ts     # in-memory Map<code, Room>
-            ├── signal-handler.ts   # routes all WS messages
-            └── code-generator.ts   # 6-char room codes
+    ├── ui/                         # @repo/ui — existing scaffold (reuse for shared components)
+    ├── eslint-config/              # @repo/eslint-config — existing
+    └── typescript-config/          # @repo/typescript-config — existing
 ```
 
 ---
@@ -130,24 +136,20 @@ teleport/
 }
 ```
 
-`^build` ensures `@teleport/shared` builds before client or server.
+`^build` ensures `@repo/shared` builds before client or server.
 
-### Root `package.json`
+### Root `package.json` scripts (already set up)
 ```json
 {
-  "name": "teleport",
-  "private": true,
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "typecheck": "turbo run typecheck",
-    "lint": "turbo run lint"
-  },
-  "devDependencies": {
-    "turbo": "latest"
+    "lint": "turbo run lint",
+    "check-types": "turbo run check-types"
   }
 }
 ```
+Note: script is `check-types` not `typecheck`.
 
 ### `pnpm-workspace.yaml`
 ```yaml
@@ -370,14 +372,14 @@ NEXT_PUBLIC_TURN_CRED=<metered.ca credential>
 
 ## Implementation Order
 
-1. **Phase 0** — Root monorepo scaffolding (package.json, turbo.json, pnpm-workspace.yaml, tsconfig.base.json)
-2. **Phase 1** — `@teleport/shared`: constants → types → protocol (always before client/server)
-3. **Phase 2** — `@teleport/server`: code-generator → room-manager → signal-handler → index + Dockerfile + fly.toml
-4. **Phase 3** — Transfer engine Web Worker (most complex; owns RTCPeerConnection)
-5. **Phase 4** — Signaling client + WS retry + hooks
-6. **Phase 5** — Zustand stores
-7. **Phase 6** — Next.js config (next.config.ts, PWA plugin, worker webpack)
-8. **Phase 7** — React UI components
+1. **Phase 0** — CLAUDE.md + `.claude/commands/` + update PLANNING.md ✅ (this file)
+2. **Phase 1** — `packages/shared` (`@repo/shared`): constants → types → protocol
+3. **Phase 2** — `apps/server` (`@repo/server`): code-generator → room-manager → signal-handler → index → Dockerfile + fly.toml
+4. **Phase 3** — Transfer engine Web Worker in `apps/web` (most complex; owns RTCPeerConnection)
+5. **Phase 4** — Signaling client + WS retry + hooks in `apps/web`
+6. **Phase 5** — Zustand stores in `apps/web`
+7. **Phase 6** — Next.js config (next.config.ts, PWA plugin `@ducanh2912/next-pwa`, worker webpack)
+8. **Phase 7** — React UI components in `apps/web`
 9. **Phase 8** — PWA manifest + share_target route
 
 ---
@@ -388,8 +390,8 @@ NEXT_PUBLIC_TURN_CRED=<metered.ca credential>
 - [ ] Two browser windows: create room → join → `DataChannel open` in console
 - [ ] Drag 10 MB file → other window auto-downloads, name + size match
 - [ ] Kill server mid-transfer → WS retry kicks in → reconnects → transfer resumes
-- [ ] `pnpm typecheck` zero errors
-- [ ] `pnpm build` produces `packages/client/out/` with `sw.js`
+- [ ] `pnpm check-types` zero errors
+- [ ] `pnpm build` produces `apps/web/out/` with `sw.js`
 
 ---
 
