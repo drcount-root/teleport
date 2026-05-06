@@ -91,6 +91,15 @@ function handleControl(msg: DataChannelMessage): void {
     case "file-meta": {
       currentReceivingFileId = msg.fileId;
       receiving.set(msg.fileId, { meta: msg, chunks: new Map(), received: 0 });
+      post({
+        type: "file-started",
+        fileId: msg.fileId,
+        name: msg.name,
+        size: msg.size,
+        mimeType: msg.mimeType,
+        totalChunks: msg.totalChunks,
+        direction: "receive",
+      });
       break;
     }
     case "ack": {
@@ -189,6 +198,15 @@ async function sendFile(file: File): Promise<void> {
 
   lastAckedChunk.set(fileId, -1);
   dc!.send(JSON.stringify(meta));
+  post({
+    type: "file-started",
+    fileId,
+    name: file.name,
+    size: file.size,
+    mimeType: meta.mimeType,
+    totalChunks,
+    direction: "send",
+  });
 
   const buf = await file.arrayBuffer();
   const startChunk = (lastAckedChunk.get(fileId) ?? -1) + 1;

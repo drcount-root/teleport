@@ -71,6 +71,15 @@ export type WorkerOutbound =
   | { type: "ice-candidate"; candidate: Record<string, unknown> }
   | { type: "channel-open" }
   | { type: "peer-failed" }
+  | {
+      type: "file-started";
+      fileId: string;
+      name: string;
+      size: number;
+      mimeType: string;
+      totalChunks: number;
+      direction: "send" | "receive";
+    }
   | { type: "progress"; fileId: string; transferredChunks: number }
   | { type: "file-complete"; fileId: string }
   | {
