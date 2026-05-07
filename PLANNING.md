@@ -364,8 +364,8 @@ NEXT_PUBLIC_TURN_CRED=<metered.ca credential>
 4. **Phase 3** — Transfer engine Web Worker in `apps/web/workers/` ✅
 5. **Phase 4** — Signaling client + WS retry + hooks in `apps/web/` ✅
 6. **Phase 5** — Zustand stores in `apps/web/stores/` ✅
-7. **Phase 6** — `apps/web/next.config.ts` (PWA plugin, worker webpack)
-8. **Phase 7** — React UI components in `apps/web/components/`
+7. **Phase 6** — `apps/web/next.config.ts` (PWA plugin, worker webpack) ✅
+8. **Phase 7** — React UI components in `apps/web/components/` ✅
 9. **Phase 8** — PWA manifest + share_target route
 
 ---
