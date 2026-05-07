@@ -292,7 +292,10 @@ function initPeerConnection(iceServers: unknown[]): RTCPeerConnection {
       await pc.setLocalDescription(offer);
       post({
         type: "offer",
-        desc: pc.localDescription!.toJSON() as unknown as Record<string, unknown>,
+        desc: pc.localDescription!.toJSON() as unknown as Record<
+          string,
+          unknown
+        >,
       });
     } catch {
       // Ignore — can fire during teardown
@@ -330,7 +333,10 @@ self.onmessage = async ({ data }: MessageEvent<WorkerInbound>) => {
       await conn.setLocalDescription(answer);
       post({
         type: "answer",
-        desc: conn.localDescription!.toJSON() as unknown as Record<string, unknown>,
+        desc: conn.localDescription!.toJSON() as unknown as Record<
+          string,
+          unknown
+        >,
       });
       break;
     }
@@ -338,7 +344,9 @@ self.onmessage = async ({ data }: MessageEvent<WorkerInbound>) => {
     case "set-remote-desc": {
       if (!pc) return;
       await pc.setRemoteDescription(
-        new RTCSessionDescription(msg.desc as unknown as RTCSessionDescriptionInit),
+        new RTCSessionDescription(
+          msg.desc as unknown as RTCSessionDescriptionInit,
+        ),
       );
       break;
     }

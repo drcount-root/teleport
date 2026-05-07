@@ -41,7 +41,9 @@ export function TransferQueue() {
                 <p className="truncate text-sm font-medium text-white">
                   {item.name}
                 </p>
-                <p className="text-xs text-zinc-500">{formatBytes(item.size)}</p>
+                <p className="text-xs text-zinc-500">
+                  {formatBytes(item.size)}
+                </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <span

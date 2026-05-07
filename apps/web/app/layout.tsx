@@ -14,6 +14,11 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Teleport — P2P File Transfer",
   description: "Send files directly to any peer. No server. No limits.",
+  manifest: "/manifest.json",
+  themeColor: "#7c3aed",
+  icons: {
+    apple: "/icon-192.png",
+  },
 };
 
 export default function RootLayout({

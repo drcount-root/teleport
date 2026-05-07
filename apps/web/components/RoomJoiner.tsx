@@ -12,10 +12,8 @@ export function RoomJoiner({ onJoinRoom }: RoomJoinerProps) {
   const { phase } = useConnectionStore();
   const [code, setCode] = useState("");
 
-  const isDisabled =
-    phase !== "idle" && phase !== "error";
-  const canSubmit =
-    code.trim().length === ROOM_CODE_LENGTH && !isDisabled;
+  const isDisabled = phase !== "idle" && phase !== "error";
+  const canSubmit = code.trim().length === ROOM_CODE_LENGTH && !isDisabled;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
